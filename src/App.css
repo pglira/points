@@ -93,6 +93,8 @@ h1 {
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
@@ -100,10 +102,21 @@ h1 {
   font-size: 15px;
 }
 
+.toolbar-buttons {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .toolbar button {
   padding: 8px 12px;
   background: var(--control);
   color: var(--text);
+}
+
+.toolbar button.armed {
+  background: var(--danger);
+  color: #fff;
 }
 
 .empty {

@@ -5,7 +5,7 @@ A Progressive Web App that counts the points of several persons, for example in 
 - Add, edit and remove persons, each with a color.
 - Count up from 0, or count down from a start value.
 - Enter the points of a round with a keypad that has + and − keys, or use the buttons for steps of ±1, ±5 and ±10.
-- Undo the last entry. Start a new game with the same persons.
+- Undo the last entry. Start a new game with the same persons from the main screen.
 
 ## Tech
 

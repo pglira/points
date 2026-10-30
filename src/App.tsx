@@ -81,9 +81,15 @@ export default function App() {
 
       <div className="toolbar">
         <span>{game.mode === 'up' ? 'Counting up' : `Counting down from ${game.start}`}</span>
-        <button onClick={() => setGame(undo)} disabled={game.entries.length === 0}>
-          ↶ Undo
-        </button>
+        <div className="toolbar-buttons">
+          <NewGameButton
+            disabled={game.entries.length === 0}
+            onConfirm={() => setGame(newGame)}
+          />
+          <button onClick={() => setGame(undo)} disabled={game.entries.length === 0}>
+            ↶ Undo
+          </button>
+        </div>
       </div>
 
       {game.players.length === 0 && (
@@ -177,13 +183,36 @@ export default function App() {
             setGame((g) => setMode(g, mode, start));
             close();
           }}
-          onNewGame={() => {
-            setGame(newGame);
-            close();
-          }}
         />
       )}
     </main>
+  );
+}
+
+const CONFIRM_MS = 3000;
+
+// Start a new game after a second tap. The button returns to its first state
+// when the second tap does not come within CONFIRM_MS.
+function NewGameButton({ disabled, onConfirm }: { disabled: boolean; onConfirm: () => void }) {
+  const [armed, setArmed] = useState(false);
+
+  useEffect(() => {
+    if (!armed) return;
+    const timer = setTimeout(() => setArmed(false), CONFIRM_MS);
+    return () => clearTimeout(timer);
+  }, [armed]);
+
+  return (
+    <button
+      className={armed ? 'armed' : undefined}
+      disabled={disabled}
+      onClick={() => {
+        if (armed) onConfirm();
+        setArmed(!armed);
+      }}
+    >
+      {armed ? 'Tap to confirm' : 'New game'}
+    </button>
   );
 }
 
@@ -367,14 +396,12 @@ interface SettingsFormProps {
   mode: Mode;
   start: number;
   onSave: (mode: Mode, start: number) => void;
-  onNewGame: () => void;
   onCancel: () => void;
 }
 
 function SettingsForm(props: SettingsFormProps) {
   const [mode, setModeValue] = useState(props.mode);
   const [start, setStart] = useState(String(props.start));
-  const [confirmNew, setConfirmNew] = useState(false);
   const startValue = Math.max(0, toInt(start));
   const valid = mode === 'up' || startValue > 0;
 
@@ -411,13 +438,6 @@ function SettingsForm(props: SettingsFormProps) {
         </label>
       )}
       <div className="buttons">
-        <button
-          type="button"
-          className="delete"
-          onClick={() => (confirmNew ? props.onNewGame() : setConfirmNew(true))}
-        >
-          {confirmNew ? 'Tap to clear all points' : 'New game'}
-        </button>
         <button type="button" onClick={props.onCancel}>
           Cancel
         </button>
