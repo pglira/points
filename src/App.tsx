@@ -23,9 +23,10 @@ import {
   undo,
   updatePlayer,
 } from './game';
+import { Icon, type IconName } from './icons';
 import { type Theme, useTheme } from './theme';
 
-const THEME_ICONS: Record<Theme, string> = { auto: '◐', light: '☀︎', dark: '☾︎' };
+const THEME_ICONS: Record<Theme, IconName> = { auto: 'auto', light: 'sun', dark: 'moon' };
 const THEME_LABELS: Record<Theme, string> = {
   auto: 'Theme: system',
   light: 'Theme: light',
@@ -68,7 +69,7 @@ export default function App() {
             aria-label={THEME_LABELS[theme]}
             title={THEME_LABELS[theme]}
           >
-            {THEME_ICONS[theme]}
+            <Icon name={THEME_ICONS[theme]} />
           </button>
           <button
             className="icon"
@@ -76,14 +77,15 @@ export default function App() {
             aria-label="Settings"
             title="Settings"
           >
-            ⚙{'︎'}
+            <Icon name="settings" />
           </button>
           <button
             className="add"
             onClick={() => setSheet({ kind: 'player', id: null })}
             aria-label="Add person"
+            title="Add person"
           >
-            +
+            <Icon name="plus" size={24} />
           </button>
         </div>
       </header>
@@ -96,7 +98,8 @@ export default function App() {
             onConfirm={() => setGame(newGame)}
           />
           <button onClick={() => setGame(undo)} disabled={game.entries.length === 0}>
-            ↶ Undo
+            <Icon name="undo" size={18} />
+            Undo
           </button>
         </div>
       </div>
@@ -132,7 +135,11 @@ export default function App() {
                 aria-label={`Enter points for ${player.name}`}
               >
                 <span className="name">
-                  {leader && <span className="star">★ </span>}
+                  {leader && (
+                    <span className="star">
+                      <Icon name="star" size={14} />
+                    </span>
+                  )}
                   {player.name}
                 </span>
                 <span className="score">{value}</span>
@@ -281,9 +288,11 @@ function SwipeRow({ className, style, open, onOpen, onClose, onEdit, onDelete, c
     <li ref={row} className="swipe">
       <div className="swipe-actions" style={{ width: SWIPE_WIDTH }} aria-hidden={!open}>
         <button className="swipe-edit" tabIndex={open ? 0 : -1} onClick={onEdit}>
+          <Icon name="edit" />
           Edit
         </button>
         <button className="swipe-delete" tabIndex={open ? 0 : -1} onClick={onDelete}>
+          <Icon name="trash" />
           Delete
         </button>
       </div>
@@ -333,6 +342,7 @@ function NewGameButton({ disabled, onConfirm }: { disabled: boolean; onConfirm: 
         setArmed(!armed);
       }}
     >
+      <Icon name="restart" size={18} />
       {armed ? 'Tap to confirm' : 'New game'}
     </button>
   );
@@ -375,7 +385,12 @@ interface PointsFormProps {
 // Keys of the keypad, in rows of four. 'back' removes the last digit, 'clear'
 // removes all digits.
 const KEYS = ['7', '8', '9', 'back', '4', '5', '6', '-', '1', '2', '3', '+', '0', 'clear'];
-const KEY_LABELS: Record<string, string> = { back: '⌫', clear: 'C', '-': '−', '+': '+' };
+const KEY_LABELS: Record<string, ReactNode> = {
+  back: <Icon name="backspace" size={26} />,
+  clear: 'C',
+  '-': <Icon name="minus" size={26} />,
+  '+': <Icon name="plus" size={26} />,
+};
 const MAX_DIGITS = 6;
 
 // Enter the points of one round with a keypad. In the 'down' mode the points
