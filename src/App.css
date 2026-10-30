@@ -133,14 +133,45 @@ ul {
   gap: 12px;
 }
 
+.swipe {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-actions {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.swipe-actions button {
+  color: #fff;
+}
+
+.swipe-edit {
+  background: var(--muted);
+}
+
+.swipe-delete {
+  background: var(--danger);
+}
+
 .player {
   --color: var(--accent);
+  position: relative;
+  /* Vertical pans scroll the page; horizontal pans reach the swipe handler. */
+  touch-action: pan-y;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px 12px 12px 16px;
   background: var(--card);
   border-left: 6px solid var(--color);
+}
+
+.player.settle {
+  transition: transform 0.2s ease;
 }
 
 .player.leader {
