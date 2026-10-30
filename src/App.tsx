@@ -25,6 +25,9 @@ const THEME_LABELS: Record<Theme, string> = {
   dark: 'Theme: dark',
 };
 
+// Changes of the score for the step buttons of a person, in rows of three.
+const STEPS = [-10, -5, -1, 1, 5, 10];
+
 // The open sheet: points of a player, a player form (id null for a new
 // player) or the settings.
 type Sheet =
@@ -108,21 +111,19 @@ export default function App() {
                 </span>
                 <span className="score">{value}</span>
               </button>
-              <div className="actions">
-                <button
-                  className="step"
-                  onClick={() => setGame((g) => addPoints(g, player.id, -1))}
-                  aria-label={game.mode === 'up' ? 'Minus 1' : 'Plus 1'}
-                >
-                  {game.mode === 'up' ? '−' : '+'}
-                </button>
-                <button
-                  className="step primary"
-                  onClick={() => setGame((g) => addPoints(g, player.id, 1))}
-                  aria-label={game.mode === 'up' ? 'Plus 1' : 'Minus 1'}
-                >
-                  {game.mode === 'up' ? '+' : '−'}
-                </button>
+              <div className="steps">
+                {STEPS.map((step) => (
+                  <button
+                    key={step}
+                    className={step * (game.mode === 'up' ? 1 : -1) > 0 ? 'step primary' : 'step'}
+                    onClick={() =>
+                      setGame((g) => addPoints(g, player.id, game.mode === 'up' ? step : -step))
+                    }
+                    aria-label={`${step > 0 ? 'Plus' : 'Minus'} ${Math.abs(step)}`}
+                  >
+                    {step > 0 ? `+${step}` : `−${-step}`}
+                  </button>
+                ))}
               </div>
             </li>
           );
@@ -220,38 +221,72 @@ interface PointsFormProps {
   onCancel: () => void;
 }
 
-// Enter the points of one round. In the 'down' mode the points reduce the
-// score.
+// Keys of the keypad, in rows of four. 'back' removes the last digit, 'clear'
+// removes all digits.
+const KEYS = ['7', '8', '9', 'back', '4', '5', '6', '-', '1', '2', '3', '+', '0', 'clear'];
+const KEY_LABELS: Record<string, string> = { back: '⌫', clear: 'C', '-': '−', '+': '+' };
+const MAX_DIGITS = 6;
+
+// Enter the points of one round with a keypad. In the 'down' mode the points
+// reduce the score. A hardware keyboard can also enter the points.
 function PointsForm({ name, mode, current, onSave, onEdit, onCancel }: PointsFormProps) {
-  const [text, setText] = useState('');
+  const [digits, setDigits] = useState('');
   const [negative, setNegative] = useState(false);
-  const value = (negative ? -1 : 1) * Math.abs(toInt(text));
+  const value = (negative ? -1 : 1) * Number(digits || 0);
   const next = mode === 'up' ? current + value : current - value;
+
+  const press = (key: string) => {
+    if (key === 'back') setDigits((d) => d.slice(0, -1));
+    else if (key === 'clear') setDigits('');
+    else if (key === '-') setNegative(true);
+    else if (key === '+') setNegative(false);
+    else setDigits((d) => (d.length < MAX_DIGITS ? (d + key).replace(/^0+/, '') : d));
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (/^[0-9+-]$/.test(e.key)) press(e.key);
+      else if (e.key === 'Backspace') press('back');
+      else if (e.key === 'Delete') press('clear');
+      else if (e.key === 'Escape') onCancel();
+      else if (e.key === 'Enter') document.querySelector<HTMLFormElement>('form.sheet')?.requestSubmit();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
 
   return (
     <SheetFrame title={name} onCancel={onCancel} onSubmit={() => value !== 0 && onSave(value)}>
-      <label>
-        {mode === 'up' ? 'Points to add' : 'Points to subtract'}
-        <div className="points-input">
+      <div className="points-display" aria-live="polite">
+        <span className="points-label">{mode === 'up' ? 'Points to add' : 'Points to subtract'}</span>
+        <output className={negative ? 'negative' : undefined}>
+          {negative ? '−' : '+'}
+          {digits || '0'}
+        </output>
+      </div>
+      <div className="keypad">
+        {KEYS.map((key) => (
           <button
+            key={key}
             type="button"
-            className={negative ? 'sign negative' : 'sign'}
-            onClick={() => setNegative((n) => !n)}
-            aria-label="Change sign"
+            className={
+              key === '0'
+                ? 'key zero'
+                : key === '-' && negative
+                  ? 'key on negative'
+                  : key === '+' && !negative
+                    ? 'key on'
+                    : 'key'
+            }
+            onClick={() => press(key)}
+            aria-label={key === 'back' ? 'Delete last digit' : key === 'clear' ? 'Clear' : undefined}
           >
-            {negative ? '−' : '+'}
+            {KEY_LABELS[key] ?? key}
           </button>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            value={text}
-            autoFocus
-            onChange={(e) => setText(e.target.value.replace('-', ''))}
-            placeholder="0"
-          />
-        </div>
-      </label>
+        ))}
+      </div>
       <p className="preview">
         Score: {current} → <strong>{next}</strong>
       </p>
