@@ -54,6 +54,9 @@ export default function App() {
   useEffect(() => saveGame(game), [game]);
 
   const best = leaders(game);
+  // Points are entries that the 'down' mode subtracts from the score, so a
+  // change of the score maps to the entry of the change times sign.
+  const sign = game.mode === 'up' ? 1 : -1;
   const close = () => setSheet(null);
   const sheetPlayer =
     sheet && sheet.kind !== 'settings' ? game.players.find((p) => p.id === sheet.id) : undefined;
@@ -148,10 +151,8 @@ export default function App() {
                 {STEPS.map((step) => (
                   <button
                     key={step}
-                    className={step * (game.mode === 'up' ? 1 : -1) > 0 ? 'step primary' : 'step'}
-                    onClick={() =>
-                      setGame((g) => addPoints(g, player.id, game.mode === 'up' ? step : -step))
-                    }
+                    className={step * sign > 0 ? 'step primary' : 'step'}
+                    onClick={() => setGame((g) => addPoints(g, player.id, step * sign))}
                     aria-label={`${step > 0 ? 'Plus' : 'Minus'} ${Math.abs(step)}`}
                   >
                     {step > 0 ? `+${step}` : `−${-step}`}
