@@ -12,6 +12,9 @@ const PATHS = {
   star: 'M12 4l2.4 5 5.6.6-4.2 3.8 1.2 5.6-5-2.9-5 2.9 1.2-5.6L4 9.6l5.6-.6z',
   edit: 'M4 20v-4L15 5l4 4L8 20zM12 8l4 4',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
+  check: 'M5 12l5 5L19 7',
+  sort: 'M8 4v16M4 16l4 4 4-4M16 20V4M12 8l4-4 4 4',
+  grip: 'M4 8h16M4 12h16M4 16h16',
   backspace: 'M8 6h12v12H8l-5-6zM11 9l6 6M17 9l-6 6',
 };
 

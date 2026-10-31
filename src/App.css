@@ -101,6 +101,11 @@ h1 {
   background: var(--control);
 }
 
+.icon.active {
+  background: var(--accent);
+  color: #fff;
+}
+
 .add {
   width: 44px;
   height: 44px;
@@ -193,6 +198,28 @@ ul {
 
 .player.leader {
   background: color-mix(in srgb, var(--color) 15%, var(--card));
+}
+
+.handle {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  /* The handle gets all pointer moves, so that a drag does not scroll the page. */
+  touch-action: none;
+  cursor: grab;
+}
+
+.player.dragged {
+  z-index: 1;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.35);
+}
+
+.player.dragged .handle {
+  cursor: grabbing;
 }
 
 .info {

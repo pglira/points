@@ -1,5 +1,6 @@
 import {
   type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent,
   type ReactNode,
   useEffect,
@@ -10,10 +11,12 @@ import {
   COLORS,
   type Game,
   type Mode,
+  type Player,
   addPlayer,
   addPoints,
   leaders,
   loadGame,
+  movePlayer,
   newGame,
   nextColor,
   removePlayer,
@@ -49,6 +52,8 @@ export default function App() {
   const [sheet, setSheet] = useState<Sheet>(null);
   // The id of the person whose row shows the swipe actions.
   const [swiped, setSwiped] = useState<string | null>(null);
+  // True while the list shows drag handles to change the order of the persons.
+  const [reorder, setReorder] = useState(false);
   const [theme, nextTheme] = useTheme();
 
   useEffect(() => saveGame(game), [game]);
@@ -66,6 +71,20 @@ export default function App() {
       <header>
         <h1>Points</h1>
         <div className="header-buttons">
+          {game.players.length > 1 && (
+            <button
+              className={reorder ? 'icon active' : 'icon'}
+              onClick={() => {
+                setSwiped(null);
+                setReorder((r) => !r);
+              }}
+              aria-pressed={reorder}
+              aria-label="Change order"
+              title="Change order"
+            >
+              <Icon name={reorder ? 'check' : 'sort'} />
+            </button>
+          )}
           <button
             className="icon"
             onClick={nextTheme}
@@ -111,58 +130,65 @@ export default function App() {
         <p className="empty">No persons. Tap + to add a person.</p>
       )}
 
-      <ul>
-        {game.players.map((player) => {
-          const value = score(game, player.id);
-          const leader = best.has(player.id);
-          return (
-            <SwipeRow
-              key={player.id}
-              className={`player${leader ? ' leader' : ''}`}
-              style={{ '--color': player.color } as CSSProperties}
-              open={swiped === player.id}
-              onOpen={() => setSwiped(player.id)}
-              onClose={() => setSwiped(null)}
-              onEdit={() => {
-                setSwiped(null);
-                setSheet({ kind: 'player', id: player.id });
-              }}
-              onDelete={() => {
-                setSwiped(null);
-                setGame((g) => removePlayer(g, player.id));
-              }}
-            >
-              <button
-                className="info"
-                onClick={() => setSheet({ kind: 'points', id: player.id })}
-                aria-label={`Enter points for ${player.name}`}
+      {reorder && game.players.length > 1 ? (
+        <ReorderList
+          game={game}
+          onMove={(from, to) => setGame((g) => movePlayer(g, from, to))}
+        />
+      ) : (
+        <ul>
+          {game.players.map((player) => {
+            const value = score(game, player.id);
+            const leader = best.has(player.id);
+            return (
+              <SwipeRow
+                key={player.id}
+                className={`player${leader ? ' leader' : ''}`}
+                style={{ '--color': player.color } as CSSProperties}
+                open={swiped === player.id}
+                onOpen={() => setSwiped(player.id)}
+                onClose={() => setSwiped(null)}
+                onEdit={() => {
+                  setSwiped(null);
+                  setSheet({ kind: 'player', id: player.id });
+                }}
+                onDelete={() => {
+                  setSwiped(null);
+                  setGame((g) => removePlayer(g, player.id));
+                }}
               >
-                <span className="name">
-                  {leader && (
-                    <span className="star">
-                      <Icon name="star" size={14} />
-                    </span>
-                  )}
-                  {player.name}
-                </span>
-                <span className="score">{value}</span>
-              </button>
-              <div className="steps">
-                {STEPS.map((step) => (
-                  <button
-                    key={step}
-                    className={step * sign > 0 ? 'step primary' : 'step'}
-                    onClick={() => setGame((g) => addPoints(g, player.id, step * sign))}
-                    aria-label={`${step > 0 ? 'Plus' : 'Minus'} ${Math.abs(step)}`}
-                  >
-                    {step > 0 ? `+${step}` : `−${-step}`}
-                  </button>
-                ))}
-              </div>
-            </SwipeRow>
-          );
-        })}
-      </ul>
+                <button
+                  className="info"
+                  onClick={() => setSheet({ kind: 'points', id: player.id })}
+                  aria-label={`Enter points for ${player.name}`}
+                >
+                  <span className="name">
+                    {leader && (
+                      <span className="star">
+                        <Icon name="star" size={14} />
+                      </span>
+                    )}
+                    {player.name}
+                  </span>
+                  <span className="score">{value}</span>
+                </button>
+                <div className="steps">
+                  {STEPS.map((step) => (
+                    <button
+                      key={step}
+                      className={step * sign > 0 ? 'step primary' : 'step'}
+                      onClick={() => setGame((g) => addPoints(g, player.id, step * sign))}
+                      aria-label={`${step > 0 ? 'Plus' : 'Minus'} ${Math.abs(step)}`}
+                    >
+                      {step > 0 ? `+${step}` : `−${-step}`}
+                    </button>
+                  ))}
+                </div>
+              </SwipeRow>
+            );
+          })}
+        </ul>
+      )}
 
       {sheet?.kind === 'points' && sheetPlayer && (
         <PointsForm
@@ -214,6 +240,91 @@ export default function App() {
         />
       )}
     </main>
+  );
+}
+
+interface ReorderListProps {
+  game: Game;
+  onMove: (from: number, to: number) => void;
+}
+
+// The persons with a drag handle on each row. Drag a handle up or down to move
+// the person. The arrow keys move the person of the focused handle.
+function ReorderList({ game, onMove }: ReorderListProps) {
+  const players = game.players;
+  // The dragged person, the pointer position at which its row is at rest, and
+  // the current pointer position.
+  const [drag, setDrag] = useState<{ id: string; origin: number; y: number } | null>(null);
+  const rows = useRef<HTMLUListElement>(null);
+
+  // The distance between the tops of two rows in pixels.
+  const step = () => {
+    const ul = rows.current;
+    const li = ul?.firstElementChild as HTMLElement | null;
+    if (!ul || !li) return 1;
+    return li.offsetHeight + parseFloat(getComputedStyle(ul).rowGap || '0');
+  };
+
+  const onPointerMove = (e: PointerEvent) => {
+    if (!drag) return;
+    const index = players.findIndex((p) => p.id === drag.id);
+    const s = step();
+    let origin = drag.origin;
+    let to = index;
+    while (e.clientY - origin > s / 2 && to < players.length - 1) {
+      origin += s;
+      to++;
+    }
+    while (e.clientY - origin < -s / 2 && to > 0) {
+      origin -= s;
+      to--;
+    }
+    if (to !== index) onMove(index, to);
+    setDrag({ id: drag.id, origin, y: e.clientY });
+  };
+
+  const onKeyDown = (e: ReactKeyboardEvent, index: number) => {
+    const to = e.key === 'ArrowUp' ? index - 1 : e.key === 'ArrowDown' ? index + 1 : -1;
+    if (to < 0 || to >= players.length) return;
+    e.preventDefault();
+    onMove(index, to);
+  };
+
+  const row = (player: Player, index: number) => {
+    const dragged = drag?.id === player.id;
+    const style = {
+      '--color': player.color,
+      transform: dragged ? `translateY(${drag.y - drag.origin}px)` : undefined,
+    } as CSSProperties;
+    return (
+      <li key={player.id} className={`player${dragged ? ' dragged' : ''}`} style={style}>
+        <span className="info">
+          <span className="name">{player.name}</span>
+          <span className="score">{score(game, player.id)}</span>
+        </span>
+        <button
+          className="handle"
+          aria-label={`Move ${player.name}`}
+          title="Drag to move"
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            setDrag({ id: player.id, origin: e.clientY, y: e.clientY });
+          }}
+          onPointerMove={onPointerMove}
+          onPointerUp={() => setDrag(null)}
+          onPointerCancel={() => setDrag(null)}
+          onKeyDown={(e) => onKeyDown(e, index)}
+        >
+          <Icon name="grip" size={24} />
+        </button>
+      </li>
+    );
+  };
+
+  return (
+    <ul ref={rows} className="reorder">
+      {players.map(row)}
+    </ul>
   );
 }
 

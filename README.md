@@ -3,6 +3,7 @@
 A Progressive Web App that counts the points of several persons, for example in card games.
 
 - Add, edit and remove persons, each with a color. Swipe a person to the left to show Edit and Delete.
+- Change the order of the persons: tap the order button and drag the handle of a person up or down.
 - Count up from 0, or count down from a start value.
 - Enter the points of a round with a keypad that has + and − keys, or use the buttons for steps of ±1, ±5 and ±10.
 - Undo the last entry. Start a new game with the same persons from the main screen.

@@ -98,6 +98,14 @@ export function removePlayer(game: Game, id: string): Game {
   };
 }
 
+// Move the player at index `from` to index `to`.
+export function movePlayer(game: Game, from: number, to: number): Game {
+  const players = [...game.players];
+  const [player] = players.splice(from, 1);
+  players.splice(to, 0, player);
+  return { ...game, players };
+}
+
 export function addPoints(game: Game, playerId: string, value: number): Game {
   if (value === 0) return game;
   return { ...game, entries: [...game.entries, { playerId, value }] };
