@@ -28,6 +28,7 @@ import {
   undo,
   updatePlayer,
 } from './game';
+import { haptic } from './haptic';
 import { Icon, type IconName } from './icons';
 import { Protocol } from './Protocol';
 import { type Theme, useTheme } from './theme';
@@ -216,6 +217,7 @@ export default function App() {
                       key={step}
                       className={step * sign > 0 ? 'step primary' : 'step'}
                       onClick={() => {
+                        haptic();
                         const merge = run?.playerId === player.id;
                         setGame((g) => addPoints(g, player.id, step * sign, merge));
                         setRun({ playerId: player.id, sum: (merge ? run.sum : 0) + step });
