@@ -548,3 +548,12 @@ input[type='number']::-webkit-outer-spin-button {
 .rounds .muted {
   color: var(--muted);
 }
+
+/* The sum of the open entry of the step buttons, next to the score. */
+.run {
+  margin-left: 10px;
+  color: var(--color);
+  font-size: 22px;
+  font-weight: 600;
+  vertical-align: 0.35em;
+}

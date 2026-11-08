@@ -1,5 +1,5 @@
 import { type PointerEvent, useEffect, useRef, useState } from 'react';
-import { type Game, type Point, history, protocol } from './game';
+import { type Game, type Point, history, protocol, signed } from './game';
 
 const HEIGHT = 200;
 // Space for the axis labels, in pixels.
@@ -12,7 +12,6 @@ const BOTTOM = 24;
 const MIN_SPAN_MS = 60_000;
 
 const time = (at: number) => new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 // Round values for about `count` ticks between `min` and `max`.
 function ticks(min: number, max: number, count: number): number[] {
@@ -165,7 +164,7 @@ export function Protocol({ game, onClose }: { game: Game; onClose: () => void })
                   const player = players.get(r.playerId);
                   return (
                     <tr key={rounds.length - i}>
-                      <td className="muted">{time(r.first)}</td>
+                      <td className="muted">{time(r.at)}</td>
                       <td>
                         <span className="dot" style={{ background: player?.color }} />
                         {player?.name}

@@ -6,8 +6,9 @@ A Progressive Web App that counts the points of several persons, for example in 
 - Change the order of the persons: tap the order button and drag the handle of a person up or down.
 - Count up from 0, or count down from a start value.
 - Enter the points of a round with a keypad that has + and − keys, or use the buttons for steps of ±1, ±5 and ±10.
+- Taps on the step buttons of one person add up to one entry. The sum shows next to the score. A new entry starts 3 s after the last tap, or when another person gets points.
 - Undo the last entry. Start a new game with the same persons from the main screen.
-- Open the protocol to see a chart of the scores over time and a list of all entries. Entries of one person within 10 s show as one row.
+- Open the protocol to see a chart of the scores over time and a list of all entries.
 
 ## Tech
 

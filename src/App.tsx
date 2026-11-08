@@ -14,6 +14,7 @@ import {
   type Player,
   addPlayer,
   addPoints,
+  dropEmpty,
   leaders,
   loadGame,
   movePlayer,
@@ -23,6 +24,7 @@ import {
   saveGame,
   score,
   setMode,
+  signed,
   undo,
   updatePlayer,
 } from './game';
@@ -39,6 +41,12 @@ const THEME_LABELS: Record<Theme, string> = {
 
 // Changes of the score for the step buttons of a person, in rows of three.
 const STEPS = [-10, -5, -1, 1, 5, 10];
+// Taps on the step buttons of one person add to one entry until no tap comes
+// for RUN_MS or another person gets points.
+const RUN_MS = 3000;
+
+// The open entry of the step buttons: the person and the sum of the steps.
+type Run = { playerId: string; sum: number } | null;
 
 // The open sheet: points of a player, a player form (id null for a new
 // player), the settings or the protocol.
@@ -56,9 +64,26 @@ export default function App() {
   const [swiped, setSwiped] = useState<string | null>(null);
   // True while the list shows drag handles to change the order of the persons.
   const [reorder, setReorder] = useState(false);
+  const [run, setRun] = useState<Run>(null);
   const [theme, nextTheme] = useTheme();
 
   useEffect(() => saveGame(game), [game]);
+
+  // Close the open entry of the step buttons RUN_MS after the last tap.
+  useEffect(() => {
+    if (!run) return;
+    const timer = setTimeout(() => {
+      setRun(null);
+      setGame(dropEmpty);
+    }, RUN_MS);
+    return () => clearTimeout(timer);
+  }, [run]);
+
+  // Change the game and close the open entry of the step buttons.
+  const change = (update: (g: Game) => Game) => {
+    setRun(null);
+    setGame(update);
+  };
 
   const best = leaders(game);
   // Points are entries that the 'down' mode subtracts from the score, so a
@@ -127,9 +152,9 @@ export default function App() {
         <div className="toolbar-buttons">
           <NewGameButton
             disabled={game.entries.length === 0}
-            onConfirm={() => setGame(newGame)}
+            onConfirm={() => change(newGame)}
           />
-          <button onClick={() => setGame(undo)} disabled={game.entries.length === 0}>
+          <button onClick={() => change(undo)} disabled={game.entries.length === 0}>
             <Icon name="undo" size={18} />
             Undo
           </button>
@@ -164,7 +189,7 @@ export default function App() {
                 }}
                 onDelete={() => {
                   setSwiped(null);
-                  setGame((g) => removePlayer(g, player.id));
+                  change((g) => removePlayer(g, player.id));
                 }}
               >
                 <button
@@ -180,14 +205,21 @@ export default function App() {
                     )}
                     {player.name}
                   </span>
-                  <span className="score">{value}</span>
+                  <span className="score">
+                    {value}
+                    {run?.playerId === player.id && <span className="run">{signed(run.sum)}</span>}
+                  </span>
                 </button>
                 <div className="steps">
                   {STEPS.map((step) => (
                     <button
                       key={step}
                       className={step * sign > 0 ? 'step primary' : 'step'}
-                      onClick={() => setGame((g) => addPoints(g, player.id, step * sign))}
+                      onClick={() => {
+                        const merge = run?.playerId === player.id;
+                        setGame((g) => addPoints(g, player.id, step * sign, merge));
+                        setRun({ playerId: player.id, sum: (merge ? run.sum : 0) + step });
+                      }}
                       aria-label={`${step > 0 ? 'Plus' : 'Minus'} ${Math.abs(step)}`}
                     >
                       {step > 0 ? `+${step}` : `−${-step}`}
@@ -209,7 +241,7 @@ export default function App() {
           onCancel={close}
           onEdit={() => setSheet({ kind: 'player', id: sheetPlayer.id })}
           onSave={(value) => {
-            setGame((g) => addPoints(g, sheetPlayer.id, value));
+            change((g) => addPoints(g, sheetPlayer.id, value));
             close();
           }}
         />
@@ -230,7 +262,7 @@ export default function App() {
           onDelete={
             sheetPlayer
               ? () => {
-                  setGame((g) => removePlayer(g, sheetPlayer.id));
+                  change((g) => removePlayer(g, sheetPlayer.id));
                   close();
                 }
               : undefined
@@ -246,7 +278,7 @@ export default function App() {
           start={game.start}
           onCancel={close}
           onSave={(mode, start) => {
-            setGame((g) => setMode(g, mode, start));
+            change((g) => setMode(g, mode, start));
             close();
           }}
         />

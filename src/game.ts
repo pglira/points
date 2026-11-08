@@ -67,6 +67,9 @@ export function nextColor(players: Player[]): string {
   return COLORS.find((c) => !used.has(c)) ?? COLORS[players.length % COLORS.length];
 }
 
+// A change of the score with its sign, for example "+5", "−3" or "±0".
+export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
+
 export function total(game: Game, playerId: string): number {
   return game.entries.reduce((sum, e) => (e.playerId === playerId ? sum + e.value : sum), 0);
 }
@@ -81,38 +84,28 @@ export function score(game: Game, playerId: string): number {
   return scoreOf(game, total(game, playerId));
 }
 
-// One row of the protocol: consecutive entries of one player, each no more
-// than MERGE_MS after the one before.
+// One row of the protocol: an entry with the change of the score and the
+// score after the entry.
 export interface Round {
   playerId: string;
-  // Times of the first and the last entry.
-  first: number;
-  last: number;
-  // Change of the score and the score after the last entry.
+  at: number;
   change: number;
   score: number;
 }
 
-const MERGE_MS = 10_000;
-
 // The rows of the protocol, oldest first.
 export function protocol(game: Game): Round[] {
   const totals = new Map<string, number>();
-  const rounds: Round[] = [];
-  for (const e of game.entries) {
+  return game.entries.map((e) => {
     const points = (totals.get(e.playerId) ?? 0) + e.value;
     totals.set(e.playerId, points);
-    const change = scoreOf(game, e.value) - scoreOf(game, 0);
-    const prev = rounds.at(-1);
-    if (prev && prev.playerId === e.playerId && e.at - prev.last <= MERGE_MS) {
-      prev.last = e.at;
-      prev.change += change;
-      prev.score = scoreOf(game, points);
-    } else {
-      rounds.push({ playerId: e.playerId, first: e.at, last: e.at, change, score: scoreOf(game, points) });
-    }
-  }
-  return rounds;
+    return {
+      playerId: e.playerId,
+      at: e.at,
+      change: scoreOf(game, e.value) - scoreOf(game, 0),
+      score: scoreOf(game, points),
+    };
+  });
 }
 
 // A point of the score history of a player.
@@ -172,13 +165,27 @@ export function movePlayer(game: Game, from: number, to: number): Game {
   return { ...game, players };
 }
 
-export function addPoints(game: Game, playerId: string, value: number): Game {
+// Add an entry. With `merge`, add the value to the last entry instead when
+// the last entry belongs to the same player.
+export function addPoints(game: Game, playerId: string, value: number, merge = false): Game {
   if (value === 0) return game;
-  return { ...game, entries: [...game.entries, { playerId, value, at: Date.now() }] };
+  const last = game.entries.at(-1);
+  if (merge && last?.playerId === playerId) {
+    return { ...game, entries: [...game.entries.slice(0, -1), { ...last, value: last.value + value }] };
+  }
+  const entries = dropEmpty(game).entries;
+  return { ...game, entries: [...entries, { playerId, value, at: Date.now() }] };
+}
+
+// Remove the entries with the value 0. Merged entries can add up to 0.
+export function dropEmpty(game: Game): Game {
+  return game.entries.every((e) => e.value !== 0)
+    ? game
+    : { ...game, entries: game.entries.filter((e) => e.value !== 0) };
 }
 
 export function undo(game: Game): Game {
-  return { ...game, entries: game.entries.slice(0, -1) };
+  return dropEmpty({ ...game, entries: game.entries.slice(0, -1) });
 }
 
 // Start a new game with the same players and settings.
