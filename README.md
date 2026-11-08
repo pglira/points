@@ -7,6 +7,7 @@ A Progressive Web App that counts the points of several persons, for example in 
 - Count up from 0, or count down from a start value.
 - Enter the points of a round with a keypad that has + and − keys, or use the buttons for steps of ±1, ±5 and ±10.
 - Undo the last entry. Start a new game with the same persons from the main screen.
+- Open the protocol to see a chart of the scores over time and a list of all entries. Entries of one person within 10 s show as one row.
 
 ## Tech
 

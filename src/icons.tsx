@@ -15,6 +15,7 @@ const PATHS = {
   check: 'M5 12l5 5L19 7',
   sort: 'M8 4v16M4 16l4 4 4-4M16 20V4M12 8l4-4 4 4',
   grip: 'M4 8h16M4 12h16M4 16h16',
+  chart: 'M4 4v16h16M7 15l4-4 3 3 5-6',
   backspace: 'M8 6h12v12H8l-5-6zM11 9l6 6M17 9l-6 6',
 };
 

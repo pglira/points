@@ -442,3 +442,109 @@ input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+.protocol {
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+
+.protocol-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.chart {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.chart svg {
+  display: block;
+  touch-action: pan-y;
+}
+
+.chart .grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.chart .axis {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+.chart .cursor {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart .line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.chart .marker {
+  stroke: var(--card);
+  stroke-width: 2;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 14px;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-time {
+  color: var(--muted);
+}
+
+.dot {
+  flex: none;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.legend .dot {
+  margin-right: 0;
+}
+
+.rounds {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.rounds th {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: normal;
+  text-align: left;
+  padding: 0 4px 6px;
+}
+
+.rounds td {
+  padding: 8px 4px;
+  border-top: 1px solid var(--border);
+}
+
+.rounds .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rounds .muted {
+  color: var(--muted);
+}

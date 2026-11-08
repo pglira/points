@@ -27,6 +27,7 @@ import {
   updatePlayer,
 } from './game';
 import { Icon, type IconName } from './icons';
+import { Protocol } from './Protocol';
 import { type Theme, useTheme } from './theme';
 
 const THEME_ICONS: Record<Theme, IconName> = { auto: 'auto', light: 'sun', dark: 'moon' };
@@ -40,11 +41,12 @@ const THEME_LABELS: Record<Theme, string> = {
 const STEPS = [-10, -5, -1, 1, 5, 10];
 
 // The open sheet: points of a player, a player form (id null for a new
-// player) or the settings.
+// player), the settings or the protocol.
 type Sheet =
   | { kind: 'points'; id: string }
   | { kind: 'player'; id: string | null }
   | { kind: 'settings' }
+  | { kind: 'protocol' }
   | null;
 
 export default function App() {
@@ -64,7 +66,7 @@ export default function App() {
   const sign = game.mode === 'up' ? 1 : -1;
   const close = () => setSheet(null);
   const sheetPlayer =
-    sheet && sheet.kind !== 'settings' ? game.players.find((p) => p.id === sheet.id) : undefined;
+    sheet && (sheet.kind === 'points' || sheet.kind === 'player') ? game.players.find((p) => p.id === sheet.id) : undefined;
 
   return (
     <main>
@@ -92,6 +94,14 @@ export default function App() {
             title={THEME_LABELS[theme]}
           >
             <Icon name={THEME_ICONS[theme]} />
+          </button>
+          <button
+            className="icon"
+            onClick={() => setSheet({ kind: 'protocol' })}
+            aria-label="Protocol"
+            title="Protocol"
+          >
+            <Icon name="chart" />
           </button>
           <button
             className="icon"
@@ -227,6 +237,8 @@ export default function App() {
           }
         />
       )}
+
+      {sheet?.kind === 'protocol' && <Protocol game={game} onClose={close} />}
 
       {sheet?.kind === 'settings' && (
         <SettingsForm
